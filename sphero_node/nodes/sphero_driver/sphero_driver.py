@@ -161,13 +161,29 @@ STRM_MASK2 = dict(
 
 
 class BTInterface(object):
+    # Sphero names and addresses:
+    # SB-2177    EF:E6:75:4F:21:77
+    # SB-3007    C1:68:26:23:30:07
+    # SB-3D1C    C1:9D:90:F1:3D:1C
+    # SB-5C09    CB:84:FE:C9:5C:09
+    # SB-5FD8    EE:22:DA:AA:5F:D8
+    # SB-68D5    EC:18:1B:7B:68:D5
+    # SB-7C20    D7:D7:26:0F:7C:20
+    # SB-A1DD    D6:C1:6A:67:A1:DD
+    # SB-BD12    EA:49:EA:D2:BD:12
+    # SB-C819    F3:9A:52:1E:C8:19
+    # SB-E222    C9:06:E6:0D:E2:22
+    # SB-F3C4    EA:92:37:14:F3:C4
+    # SB-F766    C0:C1:27:75:F7:66
+    # SB-F85A    C7:89:FD:65:F8:5A
+    # SB-FD78    E6:63:86:B3:FD:78
 
-  def __init__(self, target_name = 'Sphero', target_addr = None, port = 1):
-      self.target_name = target_name
+  def __init__(self, target_name = None, target_addr = None, port = 1):
+      self.target_name = "SB-F3C4" #target_name
       self.port = port
       self.found_device = False
       self.tries = 0
-      self.target_address = target_addr
+      self.target_address = "EA:92:37:14:F3:C4" #target_addr
       self.sock = None
 
   def connect(self):
@@ -179,10 +195,11 @@ class BTInterface(object):
           sys.stdout.write("....")
           sys.stdout.flush()
           nearby_devices = bluetooth.discover_devices(lookup_names = True)
+          print nearby_devices
 
           if len(nearby_devices)>0:
             for bdaddr, name in nearby_devices:
-              #look for a device name that starts with Sphero
+              #look for a device name that starts with SB
               if name.startswith(self.target_name):
                 self.found_device = True
                 self.target_address = bdaddr
@@ -225,8 +242,8 @@ class Sphero(threading.Thread):
 
   def __init__(self, target_name = 'Sphero', target_addr = None):
     threading.Thread.__init__(self)
-    self.target_name = target_name
-    self.target_address = target_addr
+    self.target_name = "SB-F3C4" #target_name
+    self.target_address = "EA:92:37:14:F3:C4" #target_addr
     self.bt = None
     self.shutdown = False
     self.is_connected = False
@@ -241,8 +258,10 @@ class Sphero(threading.Thread):
     self._sync_callback_queue = []
 
   def connect(self):
+    print "connect 1"
     self.bt = BTInterface(self.target_name, self.target_address)
-    self.is_connected = self.bt.connect()
+    # self.is_connected = self.bt.connect()
+    self.is_connected = True
     return True
 
   def inc_seq(self):
@@ -560,6 +579,7 @@ class Sphero(threading.Thread):
     self.create_mask_list(sample_mask1, sample_mask2)
     self.stream_mask1 = sample_mask1
     self.stream_mask2 = sample_mask2
+    #print data
     self.send(data, response)
 
   def set_filtered_data_strm(self, sample_div, sample_frames, pcnt, response):
@@ -720,7 +740,7 @@ class Sphero(threading.Thread):
     brake, 0x04 - ignored.
     :param power: 0-255 scalar value (units?).
     """
-    self.send(self.pack_cmd(REQ['CMD_SET_RAW_MOTORS'], [l_mode, l_power, r_mode, r_power]), response)
+    self.send(self.pack_cmd(REQ['CMD_RAW_MOTORS'], [l_mode, l_power, r_mode, r_power]), response)
 
   def send(self, data, response):
     """
